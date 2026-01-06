@@ -243,7 +243,6 @@ void MainWindow::clearChartLayout()
 }
 
 // 成绩趋势折线图
-
 void MainWindow::on_btn_trend_clicked()
 {
     clearChartLayout();
@@ -316,72 +315,40 @@ void MainWindow::on_btn_trend_clicked()
     ui->te_stat->append(trendDetail);
 }
 
-// 成绩占比饼图
-
+// 成绩占比饼图 - 对应UI btn_chart
 void MainWindow::on_btn_chart_clicked()
 {
-
     clearChartLayout();
+    QString selCourse = ui->cb_course->currentText() == "全部课程" ? "语文" : ui->cb_course->currentText();
 
-
-    QString selClass = ui->cb_class->currentText().trimmed();
-    QString selCourse = ui->cb_course->currentText().trimmed();
-
-
-    QString whereSql = " WHERE 1=1 ";
-    if(selClass != "全部班级")
-    {
-        whereSql += " AND student_class = '" + selClass + "'";
-    }
-    if(selCourse != "全部课程")
-    {
-        whereSql += " AND course_name = '" + selCourse + "'";
-    }
-
-    QString sql = "SELECT score FROM student_score " + whereSql;
+    QString sql = "SELECT score FROM student_score WHERE course_name = '%1'";
     QSqlQuery query;
-    // 判断SQL执行是否成功，防止数据库查询失败导致崩溃
-    if(!query.exec(sql))
-    {
-        QMessageBox::critical(this, "查询错误", "成绩数据查询失败：" + query.lastError().text());
-        return;
-    }
+    query.exec(sql.arg(selCourse));
 
     int fail=0, pass=0, good=0, excellent=0;
-    int totalCount = 0; // 统计总数据量
     while(query.next())
     {
         int sc = query.value(0).toInt();
-        totalCount++;
-        if(sc <60)      fail++;
+        if(sc <60) fail++;
         else if(sc <70) pass++;
         else if(sc <85) good++;
-        else            excellent++;
-    }
-
-    if(totalCount == 0)
-    {
-        QMessageBox::information(this, "查询结果", "当前筛选条件下，暂无成绩数据可生成饼图！");
-        return;
+        else excellent++;
     }
 
     QPieSeries *series = new QPieSeries();
-    if(fail>0)      series->append("不及格(<60分)", fail);
-    if(pass>0)      series->append("及格(60~69分)", pass);
-    if(good>0)      series->append("良好(70~84分)", good);
+    if(fail>0) series->append("不及格(<60分)", fail);
+    if(pass>0) series->append("及格(60~69分)", pass);
+    if(good>0) series->append("良好(70~84分)", good);
     if(excellent>0) series->append("优秀(≥85分)", excellent);
 
-    QChart *currentChart = new QChart();
+    currentChart = new QChart();
     currentChart->addSeries(series);
-    QString chartTitle = (selClass == "全部班级" ? "所有班级" : selClass) + " - ";
-    chartTitle += (selCourse == "全部课程" ? "所有课程" : selCourse) + " 成绩等级占比统计";
-    currentChart->setTitle(chartTitle);
+    currentChart->setTitle(selCourse + " 成绩等级占比统计");
     currentChart->legend()->setAlignment(Qt::AlignRight);
 
-    QChartView *chartView = new QChartView(currentChart);
-    chartView->setRenderHint(QPainter::Antialiasing); // 抗锯齿，饼图更清晰
+    chartView = new QChartView(currentChart);
+    chartView->setRenderHint(QPainter::Antialiasing);
 
-    // 绑定图表到UI的widget_chart容器
     QVBoxLayout *layout = new QVBoxLayout(ui->widget_chart);
     layout->setContentsMargins(0,0,0,0);
     layout->addWidget(chartView);
