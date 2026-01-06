@@ -85,7 +85,7 @@ bool MainWindow::checkInput()
     return true;
 }
 
-// 添加成绩数据 - 对应UI btn_add
+// 添加成绩数据
 void MainWindow::on_btn_add_clicked()
 {
     if(!checkInput()) return;
@@ -139,13 +139,11 @@ void MainWindow::on_btn_clear_clicked()
     ui->dateEdit->setDate(QDate::currentDate());
 }
 
-// 班级筛选下拉框 - 对应UI cb_class
+// 班级筛选下拉框
 void MainWindow::on_cb_class_currentTextChanged(const QString &arg1)
 {
     QString filterText = (arg1 == "全部班级") ? "" : arg1;
-    // 步骤1：设置筛选的列索引（2对应“班级”列）
     proxyModel->setFilterKeyColumn(2);
-    // 步骤2：设置筛选文本
     proxyModel->setFilterFixedString(filterText);
     ui->tableView->resizeColumnsToContents();
 }
@@ -155,9 +153,7 @@ void MainWindow::on_cb_class_currentTextChanged(const QString &arg1)
 void MainWindow::on_cb_course_currentTextChanged(const QString &arg1)
 {
     QString filterText = (arg1 == "全部课程") ? "" : arg1;
-    // 步骤1：设置筛选的列索引（3对应“课程”列）
     proxyModel->setFilterKeyColumn(3);
-    // 步骤2：设置筛选文本
     proxyModel->setFilterFixedString(filterText);
     ui->tableView->resizeColumnsToContents();
 }
@@ -221,7 +217,7 @@ void MainWindow::refreshCourseAndClass()
     while(query.next()){ ui->cb_course->addItem(query.value(0).toString()); }
 }
 
-// 成绩统计分析 - 对应UI btn_stat
+// 成绩统计分析
 void MainWindow::on_btn_stat_clicked()
 {
     ui->te_stat->setText(getStatResult());
@@ -246,16 +242,33 @@ void MainWindow::clearChartLayout()
     }
 }
 
-// 成绩趋势折线图 - 对应UI btn_trend
+// 成绩趋势折线图
+
 void MainWindow::on_btn_trend_clicked()
 {
     clearChartLayout();
-    QString stuName = ui->le_name->text().trimmed();
-    QString courseName = ui->le_course->text().trimmed();
+    QString stuName = "";
+    QString courseName = "";
 
+    // ==========核心修改：优先读取表格选中行的姓名和课程==========
+    QModelIndex curIndex = ui->tableView->currentIndex();
+    if(curIndex.isValid())
+    {
+        // 从选中行读取 学生姓名(第1列) + 课程名称(第3列)
+        stuName = proxyModel->data(proxyModel->index(curIndex.row(), 1)).toString();
+        courseName = proxyModel->data(proxyModel->index(curIndex.row(), 3)).toString();
+    }
+    // 如果没选中行，再读取顶部输入框的内容
+    else
+    {
+        stuName = ui->le_name->text().trimmed();
+        courseName = ui->le_course->text().trimmed();
+    }
+
+    // 双重校验：如果都为空，才提示
     if(stuName.isEmpty() || courseName.isEmpty())
     {
-        QMessageBox::warning(this, "参数缺失", "请输入要查询的【学生姓名】和【课程名称】！");
+        QMessageBox::information(this, "操作提示", "请先在表格中选中要查询的学生行，或在顶部输入框填写姓名+课程！");
         return;
     }
 
@@ -265,7 +278,7 @@ void MainWindow::on_btn_trend_clicked()
 
     QLineSeries *series = new QLineSeries();
     series->setName(stuName + " - " + courseName + " 成绩变化");
-    QString trendDetail = "\n【成绩趋势明细】\n";
+    QString trendDetail = "\n【" + stuName + " - " + courseName + " 成绩趋势明细】\n";
     int examIndex = 0;
     while(query.next())
     {
@@ -278,7 +291,7 @@ void MainWindow::on_btn_trend_clicked()
 
     if(examIndex == 0)
     {
-        QMessageBox::information(this, "查询结果", "未查询到该学生该课程的成绩数据！");
+        QMessageBox::information(this, "查询结果", "未查询到【"+stuName+"】的【"+courseName+"】成绩数据！");
         delete series;
         return;
     }
@@ -299,50 +312,83 @@ void MainWindow::on_btn_trend_clicked()
     layout->addWidget(chartView);
     ui->widget_chart->setLayout(layout);
 
+    // 趋势明细追加到统计文本区
     ui->te_stat->append(trendDetail);
 }
 
-// 成绩占比饼图 - 对应UI btn_chart
+// 成绩占比饼图
+
 void MainWindow::on_btn_chart_clicked()
 {
-    clearChartLayout();
-    QString selCourse = ui->cb_course->currentText() == "全部课程" ? "语文" : ui->cb_course->currentText();
 
-    QString sql = "SELECT score FROM student_score WHERE course_name = '%1'";
+    clearChartLayout();
+
+
+    QString selClass = ui->cb_class->currentText().trimmed();
+    QString selCourse = ui->cb_course->currentText().trimmed();
+
+
+    QString whereSql = " WHERE 1=1 ";
+    if(selClass != "全部班级")
+    {
+        whereSql += " AND student_class = '" + selClass + "'";
+    }
+    if(selCourse != "全部课程")
+    {
+        whereSql += " AND course_name = '" + selCourse + "'";
+    }
+
+    QString sql = "SELECT score FROM student_score " + whereSql;
     QSqlQuery query;
-    query.exec(sql.arg(selCourse));
+    // 判断SQL执行是否成功，防止数据库查询失败导致崩溃
+    if(!query.exec(sql))
+    {
+        QMessageBox::critical(this, "查询错误", "成绩数据查询失败：" + query.lastError().text());
+        return;
+    }
 
     int fail=0, pass=0, good=0, excellent=0;
+    int totalCount = 0; // 统计总数据量
     while(query.next())
     {
         int sc = query.value(0).toInt();
-        if(sc <60) fail++;
+        totalCount++;
+        if(sc <60)      fail++;
         else if(sc <70) pass++;
         else if(sc <85) good++;
-        else excellent++;
+        else            excellent++;
+    }
+
+    if(totalCount == 0)
+    {
+        QMessageBox::information(this, "查询结果", "当前筛选条件下，暂无成绩数据可生成饼图！");
+        return;
     }
 
     QPieSeries *series = new QPieSeries();
-    if(fail>0) series->append("不及格(<60分)", fail);
-    if(pass>0) series->append("及格(60~69分)", pass);
-    if(good>0) series->append("良好(70~84分)", good);
+    if(fail>0)      series->append("不及格(<60分)", fail);
+    if(pass>0)      series->append("及格(60~69分)", pass);
+    if(good>0)      series->append("良好(70~84分)", good);
     if(excellent>0) series->append("优秀(≥85分)", excellent);
 
-    currentChart = new QChart();
+    QChart *currentChart = new QChart();
     currentChart->addSeries(series);
-    currentChart->setTitle(selCourse + " 成绩等级占比统计");
+    QString chartTitle = (selClass == "全部班级" ? "所有班级" : selClass) + " - ";
+    chartTitle += (selCourse == "全部课程" ? "所有课程" : selCourse) + " 成绩等级占比统计";
+    currentChart->setTitle(chartTitle);
     currentChart->legend()->setAlignment(Qt::AlignRight);
 
-    chartView = new QChartView(currentChart);
-    chartView->setRenderHint(QPainter::Antialiasing);
+    QChartView *chartView = new QChartView(currentChart);
+    chartView->setRenderHint(QPainter::Antialiasing); // 抗锯齿，饼图更清晰
 
+    // 绑定图表到UI的widget_chart容器
     QVBoxLayout *layout = new QVBoxLayout(ui->widget_chart);
     layout->setContentsMargins(0,0,0,0);
     layout->addWidget(chartView);
     ui->widget_chart->setLayout(layout);
 }
 
-// 导出成绩报表 - 对应UI btn_export
+// 导出成绩报表
 void MainWindow::on_btn_export_clicked()
 {
     QString fileName = "./成绩统计报表_" + QDate::currentDate().toString("yyyyMMdd") + ".csv";

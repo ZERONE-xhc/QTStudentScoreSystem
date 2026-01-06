@@ -54,7 +54,7 @@ public:
     QPushButton *btn_delete;
     QPushButton *btn_clear;
     QGroupBox *groupBox_2;
-    QWidget *widget;
+    QWidget *layoutWidget;
     QFormLayout *formLayout_2;
     QLabel *label_6;
     QComboBox *cb_class;
@@ -62,7 +62,6 @@ public:
     QComboBox *cb_course;
     QVBoxLayout *verticalLayout_3;
     QTextEdit *te_stat;
-    QSpacerItem *verticalSpacer;
     QWidget *widget_chart;
     QSpacerItem *horizontalSpacer;
     QVBoxLayout *verticalLayout_2;
@@ -179,28 +178,28 @@ public:
         groupBox_2->setMinimumSize(QSize(280, 100));
         groupBox_2->setMaximumSize(QSize(16777215, 16777215));
         groupBox_2->setAlignment(Qt::AlignmentFlag::AlignCenter);
-        widget = new QWidget(groupBox_2);
-        widget->setObjectName("widget");
-        widget->setGeometry(QRect(10, 30, 261, 59));
-        formLayout_2 = new QFormLayout(widget);
+        layoutWidget = new QWidget(groupBox_2);
+        layoutWidget->setObjectName("layoutWidget");
+        layoutWidget->setGeometry(QRect(10, 30, 261, 59));
+        formLayout_2 = new QFormLayout(layoutWidget);
         formLayout_2->setObjectName("formLayout_2");
         formLayout_2->setContentsMargins(0, 0, 0, 0);
-        label_6 = new QLabel(widget);
+        label_6 = new QLabel(layoutWidget);
         label_6->setObjectName("label_6");
 
         formLayout_2->setWidget(0, QFormLayout::ItemRole::LabelRole, label_6);
 
-        cb_class = new QComboBox(widget);
+        cb_class = new QComboBox(layoutWidget);
         cb_class->setObjectName("cb_class");
 
         formLayout_2->setWidget(0, QFormLayout::ItemRole::FieldRole, cb_class);
 
-        label_7 = new QLabel(widget);
+        label_7 = new QLabel(layoutWidget);
         label_7->setObjectName("label_7");
 
         formLayout_2->setWidget(1, QFormLayout::ItemRole::LabelRole, label_7);
 
-        cb_course = new QComboBox(widget);
+        cb_course = new QComboBox(layoutWidget);
         cb_course->setObjectName("cb_course");
 
         formLayout_2->setWidget(1, QFormLayout::ItemRole::FieldRole, cb_course);
@@ -216,10 +215,6 @@ public:
         te_stat->setReadOnly(true);
 
         verticalLayout_3->addWidget(te_stat);
-
-        verticalSpacer = new QSpacerItem(197, 40, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
-
-        verticalLayout_3->addItem(verticalSpacer);
 
         widget_chart = new QWidget(centralwidget);
         widget_chart->setObjectName("widget_chart");
