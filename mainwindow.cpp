@@ -226,19 +226,29 @@ void MainWindow::on_btn_stat_clicked()
 // 清理图表容器 释放内存 防止内存泄漏
 void MainWindow::clearChartLayout()
 {
-    if(chartView) { delete chartView; chartView = nullptr; }
-    if(currentChart) { delete currentChart; currentChart = nullptr; }
+    // 先销毁图表视图和图表对象
+    if(chartView) {
+        delete chartView;
+        chartView = nullptr;
+    }
+    if(currentChart) {
+        delete currentChart;
+        currentChart = nullptr;
+    }
 
+    // 清空布局
     QLayout *lay = ui->widget_chart->layout();
     if(lay)
     {
         QLayoutItem *item;
         while((item = lay->takeAt(0)) != nullptr)
         {
-            delete item->widget();
-            delete item;
+            if(item->widget()) {
+                delete item->widget(); // 销毁布局内的控件
+            }
+            delete item; // 销毁布局项
         }
-        delete lay;
+        delete lay; // 销毁布局本身
     }
 }
 
