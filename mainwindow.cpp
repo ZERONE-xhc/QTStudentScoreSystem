@@ -255,26 +255,31 @@ void MainWindow::clearChartLayout()
 // 成绩趋势折线图
 void MainWindow::on_btn_trend_clicked()
 {
+    if(chartView) {
+        delete chartView;
+        chartView = nullptr; // 重置指针
+    }
+    if(currentChart) {
+        delete currentChart;
+        currentChart = nullptr; // 重置指针
+    }
     clearChartLayout();
+
     QString stuName = "";
     QString courseName = "";
 
-    // ==========核心修改：优先读取表格选中行的姓名和课程==========
     QModelIndex curIndex = ui->tableView->currentIndex();
     if(curIndex.isValid())
     {
-        // 从选中行读取 学生姓名(第1列) + 课程名称(第3列)
-        stuName = proxyModel->data(proxyModel->index(curIndex.row(), 1)).toString();
-        courseName = proxyModel->data(proxyModel->index(curIndex.row(), 3)).toString();
+        stuName = proxyModel->data(proxyModel->index(curIndex.row(), 1)).toString().trimmed();
+        courseName = proxyModel->data(proxyModel->index(curIndex.row(), 3)).toString().trimmed();
     }
-    // 如果没选中行，再读取顶部输入框的内容
     else
     {
         stuName = ui->le_name->text().trimmed();
         courseName = ui->le_course->text().trimmed();
     }
 
-    // 双重校验：如果都为空，才提示
     if(stuName.isEmpty() || courseName.isEmpty())
     {
         QMessageBox::information(this, "操作提示", "请先在表格中选中要查询的学生行，或在顶部输入框填写姓名+课程！");
@@ -283,12 +288,17 @@ void MainWindow::on_btn_trend_clicked()
 
     QString sql = "SELECT score,exam_time FROM student_score WHERE student_name='%1' AND course_name='%2' ORDER BY exam_time ASC";
     QSqlQuery query;
-    query.exec(sql.arg(stuName).arg(courseName));
+    if(!query.exec(sql.arg(stuName).arg(courseName)))
+    {
+        QMessageBox::critical(this, "查询错误", "数据库查询失败：" + query.lastError().text());
+        return;
+    }
 
     QLineSeries *series = new QLineSeries();
     series->setName(stuName + " - " + courseName + " 成绩变化");
     QString trendDetail = "\n【" + stuName + " - " + courseName + " 成绩趋势明细】\n";
     int examIndex = 0;
+
     while(query.next())
     {
         int score = query.value(0).toInt();
@@ -298,15 +308,16 @@ void MainWindow::on_btn_trend_clicked()
         examIndex++;
     }
 
+    // 无数据提示
     if(examIndex == 0)
     {
         QMessageBox::information(this, "查询结果", "未查询到【"+stuName+"】的【"+courseName+"】成绩数据！");
-        delete series;
+        delete series; // 释放series，避免内存泄漏
         return;
     }
 
     currentChart = new QChart();
-    currentChart->addSeries(series);
+    currentChart->addSeries(series); // series会被chart自动管理，无需手动释放
     currentChart->setTitle(stuName + " - " + courseName + " 成绩变化趋势图");
     currentChart->createDefaultAxes();
     currentChart->axisY()->setRange(0, 100);
@@ -316,22 +327,20 @@ void MainWindow::on_btn_trend_clicked()
     chartView = new QChartView(currentChart);
     chartView->setRenderHint(QPainter::Antialiasing);
 
+    // 绑定到图表容器
     QVBoxLayout *layout = new QVBoxLayout(ui->widget_chart);
     layout->setContentsMargins(0,0,0,0);
     layout->addWidget(chartView);
     ui->widget_chart->setLayout(layout);
 
-    // 趋势明细追加到统计文本区
     ui->te_stat->append(trendDetail);
 }
 
 // 成绩占比饼图
-
 void MainWindow::on_btn_chart_clicked()
 {
 
     clearChartLayout();
-
 
     QString selClass = ui->cb_class->currentText().trimmed();
     QString selCourse = ui->cb_course->currentText().trimmed();
