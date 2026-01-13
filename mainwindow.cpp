@@ -1,13 +1,16 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QTimer>
+#include <QRegularExpression>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->setWindowTitle("学生成绩与分析系统 (Qt6+SQLite+图表统计)");
+    currentClass = "全部班级";
+    currentCourse = "全部课程";
+    this->setWindowTitle("学生成绩与分析系统)");
     this->setMinimumSize(1000, 820);
 
     // 初始化数据库和表格数据
@@ -143,20 +146,20 @@ void MainWindow::on_btn_clear_clicked()
 // 班级筛选下拉框
 void MainWindow::on_cb_class_currentTextChanged(const QString &arg1)
 {
-    QString filterText = (arg1 == "全部班级") ? "" : arg1;
-    proxyModel->setFilterKeyColumn(2);
-    proxyModel->setFilterFixedString(filterText);
-    ui->tableView->resizeColumnsToContents();
+    // 存储当前班级筛选条件
+    currentClass = arg1;
+    // 调用组合筛选函数
+    applyCombinedFilter();
 }
 
 
-// 刷新班级和课程下拉框数据
+// 课程筛选下拉框
 void MainWindow::on_cb_course_currentTextChanged(const QString &arg1)
 {
-    QString filterText = (arg1 == "全部课程") ? "" : arg1;
-    proxyModel->setFilterKeyColumn(3);
-    proxyModel->setFilterFixedString(filterText);
-    ui->tableView->resizeColumnsToContents();
+    // 存储当前课程筛选条件
+    currentCourse = arg1;
+    // 调用组合筛选函数
+    applyCombinedFilter();
 }
 
 // 生成统计结果文本
@@ -451,3 +454,21 @@ void MainWindow::on_btn_clearChart_clicked()
     });
 }
 
+// 组合筛选
+void MainWindow::applyCombinedFilter()
+{
+    // 1. 构建SQL筛选条件
+    QString whereSql = "1=1";
+    if (currentClass != "全部班级") {
+        whereSql += " AND student_class = '" + currentClass + "'";
+    }
+    if (currentCourse != "全部课程") {
+        whereSql += " AND course_name = '" + currentCourse + "'";
+    }
+
+    // 2. 直接修改sqlModel的查询条件（绕过proxyModel的单条件限制）
+    sqlModel->setFilter(whereSql);
+    sqlModel->select(); // 重新查询数据库
+
+    ui->tableView->resizeColumnsToContents();
+}

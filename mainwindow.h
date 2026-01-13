@@ -66,11 +66,14 @@ private:
     QSortFilterProxyModel *proxyModel;
     QChart *currentChart = nullptr;
     QChartView *chartView = nullptr;
+    QString currentClass;
+    QString currentCourse;
 
     bool checkInput();
     QString getStatResult();
     void refreshCourseAndClass();
     void clearChartLayout();
+    void applyCombinedFilter();
 
 };
 #endif // MAINWINDOW_H
