@@ -245,7 +245,12 @@ void MainWindow::clearChartLayout()
 // 成绩趋势折线图
 void MainWindow::on_btn_trend_clicked()
 {
-    clearChartLayout();
+    QLayout *lay = ui->widget_chart->layout();
+    if(lay && lay->count() > 0)
+    {
+        QMessageBox::warning(this, "操作提示", "当前图表容器中存在未清理的图表，请先点击【清空图表】按钮！");
+        return;
+    }
     QString stuName = "";
     QString courseName = "";
 
@@ -315,7 +320,12 @@ void MainWindow::on_btn_trend_clicked()
 // 成绩占比饼图
 void MainWindow::on_btn_chart_clicked()
 {
-    clearChartLayout();
+    QLayout *lay = ui->widget_chart->layout();
+    if(lay && lay->count() > 0)
+    {
+        QMessageBox::warning(this, "操作提示", "当前图表容器中存在未清理的图表，请先点击【清空图表】按钮！");
+        return;
+    }
 
     QString selClass = ui->cb_class->currentText().trimmed();
     QString selCourse = ui->cb_course->currentText().trimmed();
