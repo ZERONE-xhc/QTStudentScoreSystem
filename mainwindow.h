@@ -57,6 +57,8 @@ private slots:
 
     void on_btn_export_clicked();
 
+    void on_btn_clearChart_clicked();
+
 private:
     Ui::MainWindow *ui;
     QSqlDatabase db;

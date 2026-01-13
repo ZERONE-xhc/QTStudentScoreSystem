@@ -68,6 +68,7 @@ public:
     QPushButton *btn_stat;
     QPushButton *btn_trend;
     QPushButton *btn_chart;
+    QPushButton *btn_clearChart;
     QPushButton *btn_export;
     QSpacerItem *horizontalSpacer_2;
     QTableView *tableView;
@@ -246,6 +247,11 @@ public:
 
         verticalLayout_2->addWidget(btn_chart);
 
+        btn_clearChart = new QPushButton(centralwidget);
+        btn_clearChart->setObjectName("btn_clearChart");
+
+        verticalLayout_2->addWidget(btn_clearChart);
+
         btn_export = new QPushButton(centralwidget);
         btn_export->setObjectName("btn_export");
 
@@ -300,6 +306,7 @@ public:
         btn_stat->setText(QCoreApplication::translate("MainWindow", "\346\210\220\347\273\251\347\273\237\350\256\241\345\210\206\346\236\220", nullptr));
         btn_trend->setText(QCoreApplication::translate("MainWindow", "\346\210\220\347\273\251\350\266\213\345\212\277\346\212\230\347\272\277\345\233\276", nullptr));
         btn_chart->setText(QCoreApplication::translate("MainWindow", "\346\210\220\347\273\251\345\215\240\346\257\224\351\245\274\345\233\276", nullptr));
+        btn_clearChart->setText(QCoreApplication::translate("MainWindow", "\346\270\205\351\231\244\345\233\276\350\241\250", nullptr));
         btn_export->setText(QCoreApplication::translate("MainWindow", "\345\257\274\345\207\272\346\210\220\347\273\251\346\212\245\350\241\250", nullptr));
     } // retranslateUi
 

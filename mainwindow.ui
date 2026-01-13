@@ -253,6 +253,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="btn_clearChart">
+        <property name="text">
+         <string>清除图表</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="btn_export">
         <property name="text">
          <string>导出成绩报表</string>

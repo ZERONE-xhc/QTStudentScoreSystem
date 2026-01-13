@@ -367,10 +367,10 @@ void MainWindow::on_btn_chart_clicked()
     QString chartTitle = (selClass == "全部班级" ? "所有班级" : selClass) + " - ";
     chartTitle += (selCourse == "全部课程" ? "所有课程" : selCourse) + " 成绩等级占比统计";
     currentChart->setTitle(chartTitle);
-    currentChart->legend()->setAlignment(Qt::AlignRight); // 图例靠右显示
+    currentChart->legend()->setAlignment(Qt::AlignRight);
 
     QChartView *chartView = new QChartView(currentChart);
-    chartView->setRenderHint(QPainter::Antialiasing); // 抗锯齿，饼图更清晰
+    chartView->setRenderHint(QPainter::Antialiasing);
 
     // 绑定图表到UI的widget_chart容器
     QVBoxLayout *layout = new QVBoxLayout(ui->widget_chart);
@@ -407,3 +407,11 @@ void MainWindow::on_btn_export_clicked()
     file.close();
     QMessageBox::information(this, "导出成功", "成绩报表已导出至程序目录：\n" + fileName);
 }
+
+void MainWindow::on_btn_clearChart_clicked()
+{
+    clearChartLayout();
+    QMessageBox::information(this, "操作成功", "图表已清空！");
+    ui->widget_chart->update();
+}
+
