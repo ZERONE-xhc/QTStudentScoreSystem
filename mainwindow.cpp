@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -110,7 +111,7 @@ void MainWindow::on_btn_add_clicked()
     }
 }
 
-// 删除选中数据 - 对应UI btn_delete
+// 删除选中数据
 void MainWindow::on_btn_delete_clicked()
 {
     QModelIndex curIndex = ui->tableView->currentIndex();
@@ -223,30 +224,45 @@ void MainWindow::on_btn_stat_clicked()
     ui->te_stat->setText(getStatResult());
 }
 
-// 清理图表容器 释放内存 防止内存泄漏
+// 清理图表容器
 void MainWindow::clearChartLayout()
 {
-    if(chartView) { delete chartView; chartView = nullptr; }
-    if(currentChart) { delete currentChart; currentChart = nullptr; }
+    if(chartView) {
+        chartView->setParent(nullptr);
+        chartView = nullptr;
+    }
+    if(currentChart) {
+        currentChart = nullptr;
+    }
 
     QLayout *lay = ui->widget_chart->layout();
     if(lay)
     {
-        QLayoutItem *item;
-        while((item = lay->takeAt(0)) != nullptr)
-        {
-            delete item->widget();
+        while (QLayoutItem *item = lay->takeAt(0)) {
+            if (QWidget *w = item->widget()) {
+                w->deleteLater();
+            }
             delete item;
         }
-        delete lay;
+        // 延迟销毁布局
+        lay->deleteLater();
     }
+
+    ui->widget_chart->setLayout(nullptr);
+    ui->widget_chart->update();
 }
 
 // 成绩趋势折线图
 void MainWindow::on_btn_trend_clicked()
 {
+    bool hasChart = false;
     QLayout *lay = ui->widget_chart->layout();
-    if(lay && lay->count() > 0)
+    if(lay) {
+        hasChart = (lay->count() > 0);
+    }
+    hasChart = hasChart || (chartView != nullptr);
+
+    if(hasChart)
     {
         QMessageBox::warning(this, "操作提示", "当前图表容器中存在未清理的图表，请先点击【清空图表】按钮！");
         return;
@@ -320,8 +336,14 @@ void MainWindow::on_btn_trend_clicked()
 // 成绩占比饼图
 void MainWindow::on_btn_chart_clicked()
 {
+    bool hasChart = false;
     QLayout *lay = ui->widget_chart->layout();
-    if(lay && lay->count() > 0)
+    if(lay) {
+        hasChart = (lay->count() > 0);
+    }
+    hasChart = hasChart || (chartView != nullptr);
+
+    if(hasChart)
     {
         QMessageBox::warning(this, "操作提示", "当前图表容器中存在未清理的图表，请先点击【清空图表】按钮！");
         return;
@@ -418,10 +440,14 @@ void MainWindow::on_btn_export_clicked()
     QMessageBox::information(this, "导出成功", "成绩报表已导出至程序目录：\n" + fileName);
 }
 
+// 清空图表按钮
 void MainWindow::on_btn_clearChart_clicked()
 {
     clearChartLayout();
-    QMessageBox::information(this, "操作成功", "图表已清空！");
-    ui->widget_chart->update();
+
+    // 延迟100ms提示，等待Qt完成销毁操作
+    QTimer::singleShot(100, this, [=]() {
+        QMessageBox::information(this, "操作成功", "图表已清空！");
+    });
 }
 
