@@ -71,5 +71,6 @@ private:
     QString getStatResult();
     void refreshCourseAndClass();
     void clearChartLayout();
+
 };
 #endif // MAINWINDOW_H

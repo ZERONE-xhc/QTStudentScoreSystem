@@ -19,6 +19,142 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">/* ========== 全局样式 ========== */
+QMainWindow {
+    background-color: #f5f7fa; /* 主窗口浅灰背景 */
+}
+
+/* ========== 按钮样式 ========== */
+QPushButton {
+    background-color: #3498db; /* 主色调：蓝色 */
+    color: white;              /* 文字白色 */
+    border: none;              /* 无边框 */
+    border-radius: 6px;        /* 圆角6px */
+    padding: 6px 16px;         /* 内边距：上下6px，左右16px */
+    font-size: 8pt;           /* 字体大小 */
+}
+/* 鼠标悬浮 */
+QPushButton:hover {
+    background-color: #2980b9; /* 深一点的蓝色 */
+}
+/* 鼠标按下 */
+QPushButton:pressed {
+    background-color: #1f618d; /* 更深的蓝色 */
+}
+/* 禁用状态 */
+QPushButton:disabled {
+    background-color: #bdc3c7;
+    color: #7f8c8d;
+}
+/* 清空图表按钮特殊样式（红色） */
+QPushButton#btn_clearChart {
+    background-color: #e74c3c;
+}
+QPushButton#btn_clearChart:hover {
+    background-color: #c0392b;
+}
+/* 统计按钮特殊样式（绿色） */
+QPushButton#btn_stat {
+    background-color: #2ecc71;
+}
+QPushButton#btn_stat:hover {
+    background-color: #27ae60;
+}
+
+/* ========== 输入框/下拉框/数字框/日期框 ========== */
+QLineEdit, QComboBox, QSpinBox, QDateEdit {
+    border: 1px solid #ddd;    /* 浅灰边框 */
+    border-radius: 4px;        /* 圆角4px */
+    padding: 4px;              /* 内边距 */
+    font-size: 8pt;           /* 字体大小 */
+    background-color: white;   /* 白色背景 */
+}
+/* 聚焦时样式（蓝色边框） */
+QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDateEdit:focus {
+    border-color: #3498db;
+    outline: none;             /* 无默认外边框 */
+}
+
+/* ========== 下拉框弹出列表 ========== */
+QComboBox QAbstractItemView {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    selection-background-color: #3498db; /* 选中行蓝色 */
+    selection-color: white;              /* 选中行文字白色 */
+}
+
+/* ========== 表格样式 ========== */
+QTableView {
+    border: 1px solid #ddd;
+    border-radius: 6px;        /* 表格圆角 */
+    background-color: white;
+    alternate-row-color: #f9f9f9; /* 隔行浅灰 */
+    gridline-color: #eee;       /* 网格线浅灰 */
+}
+/* 表格表头 */
+QTableView::horizontalHeader {
+    background-color: #3498db;
+    color: white;
+    font-weight: bold;
+    border: none;
+}
+QTableView::horizontalHeader::section {
+    padding: 8px;
+    border: none;
+}
+/* 表格垂直表头 */
+QTableView::verticalHeader {
+    background-color: #f5f7fa;
+    border: none;
+}
+/* 表格选中行 */
+QTableView::item:selected {
+    background-color: #3498db;
+    color: white;
+}
+
+/* ========== 分组框（GroupBox） ========== */
+QGroupBox {
+    font-weight: bold;         /* 标题加粗 */
+    border: 1px solid #ddd;    /* 边框 */
+    border-radius: 8px;        /* 圆角8px */
+    margin-top: 10px;          /* 顶部外边距 */
+    padding-top: 10px;         /* 顶部内边距 */
+    background-color: white;   /* 白色背景 */
+}
+/* 分组框标题 */
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;                /* 标题左移10px */
+    top: -3px;                 /* 标题上移7px（悬浮效果） */
+    padding: 0 8px;            /* 标题左右内边距 */
+    background-color: #f5f7fa; /* 标题背景与主窗口一致 */
+}
+
+/* ========== 文本编辑框（统计区） ========== */
+QTextEdit {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: white;
+    padding: 8px;
+    font-size: 8pt;
+}
+
+/* ========== 标签样式 ========== */
+QLabel {
+    font-size: 8pt;
+    color: #2c3e50; /* 深灰文字（更清晰） */
+}
+
+/* ========== 图表容器 ========== */
+QWidget#widget_chart {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: white;
+}</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0" rowspan="2">
@@ -161,7 +297,7 @@
          <x>10</x>
          <y>30</y>
          <width>261</width>
-         <height>59</height>
+         <height>83</height>
         </rect>
        </property>
        <layout class="QFormLayout" name="formLayout_2">
