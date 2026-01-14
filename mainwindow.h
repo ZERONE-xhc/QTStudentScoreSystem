@@ -21,6 +21,8 @@
 #include <QtCharts/QPieSeries>
 #include <QtCharts/QChartView>
 
+// 声明全局数据库对象（供LoginWindow复用）
+extern QSqlDatabase db;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -38,30 +40,19 @@ public:
 
 private slots:
     void initDatabase();
-
     void on_btn_add_clicked();
-
     void on_btn_delete_clicked();
-
     void on_btn_clear_clicked();
-
     void on_cb_class_currentTextChanged(const QString &arg1);
-
     void on_cb_course_currentTextChanged(const QString &arg1);
-
     void on_btn_stat_clicked();
-
     void on_btn_trend_clicked();
-
     void on_btn_chart_clicked();
-
     void on_btn_export_clicked();
-
     void on_btn_clearChart_clicked();
 
 private:
     Ui::MainWindow *ui;
-    QSqlDatabase db;
     QSqlTableModel *sqlModel;
     QSortFilterProxyModel *proxyModel;
     QChart *currentChart = nullptr;
@@ -74,6 +65,5 @@ private:
     void refreshCourseAndClass();
     void clearChartLayout();
     void applyCombinedFilter();
-
 };
 #endif // MAINWINDOW_H

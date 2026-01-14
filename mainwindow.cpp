@@ -3,6 +3,9 @@
 #include <QTimer>
 #include <QRegularExpression>
 
+// 定义全局数据库对象（供LoginWindow复用）
+QSqlDatabase db;
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -10,8 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     currentClass = "全部班级";
     currentCourse = "全部课程";
-    this->setWindowTitle("学生成绩与分析系统)");
-    this->setMinimumSize(1000, 820);
+    this->setWindowTitle("学生成绩与分析系统");
 
     // 初始化数据库和表格数据
     initDatabase();
@@ -40,7 +42,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-// 初始化SQLite数据库 自动创建数据表
+// 初始化SQLite数据库 自动创建数据表（新增user表）
 void MainWindow::initDatabase()
 {
     db = QSqlDatabase::addDatabase("QSQLITE");
@@ -52,19 +54,39 @@ void MainWindow::initDatabase()
         return;
     }
 
-    QString sql_create = "CREATE TABLE IF NOT EXISTS student_score ("
-                         "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                         "student_name VARCHAR(20) NOT NULL,"
-                         "student_class VARCHAR(10) NOT NULL,"
-                         "course_name VARCHAR(20) NOT NULL,"
-                         "score INTEGER NOT NULL CHECK(score>=0 AND score<=100),"
-                         "exam_time DATE NOT NULL);";
+    // 1. 创建学生成绩表
+    QString sql_create_score = "CREATE TABLE IF NOT EXISTS student_score ("
+                               "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                               "student_name VARCHAR(20) NOT NULL,"
+                               "student_class VARCHAR(10) NOT NULL,"
+                               "course_name VARCHAR(20) NOT NULL,"
+                               "score INTEGER NOT NULL CHECK(score>=0 AND score<=100),"
+                               "exam_time DATE NOT NULL);";
     QSqlQuery query;
-    if(!query.exec(sql_create))
+    if(!query.exec(sql_create_score))
     {
-        QMessageBox::warning(this, "建表提示", "数据表创建失败：" + query.lastError().text());
+        QMessageBox::warning(this, "建表提示", "成绩表创建失败：" + query.lastError().text());
     }
 
+    // 2. 创建用户表（登录用）
+    QString sql_create_user = "CREATE TABLE IF NOT EXISTS `user` ("
+                              "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                              "username VARCHAR(20) NOT NULL UNIQUE,"
+                              "password VARCHAR(20) NOT NULL,"
+                              "role VARCHAR(10) DEFAULT 'user');";
+    if(!query.exec(sql_create_user))
+    {
+        QMessageBox::warning(this, "建表提示", "用户表创建失败：" + query.lastError().text());
+    }
+
+    // 3. 插入默认管理员账号（避免重复插入）
+    query.exec("SELECT * FROM user WHERE username = 'admin'");
+    if(!query.next())
+    {
+        query.exec("INSERT INTO user (username, password, role) VALUES ('admin', '123456', 'admin')");
+    }
+
+    // 初始化成绩表模型
     sqlModel = new QSqlTableModel(this, db);
     sqlModel->setTable("student_score");
     sqlModel->setEditStrategy(QSqlTableModel::OnFieldChange);
@@ -133,7 +155,7 @@ void MainWindow::on_btn_delete_clicked()
     }
 }
 
-// 清空输入框 - 对应UI btn_clear
+// 清空输入框
 void MainWindow::on_btn_clear_clicked()
 {
     ui->le_name->clear();
@@ -146,19 +168,14 @@ void MainWindow::on_btn_clear_clicked()
 // 班级筛选下拉框
 void MainWindow::on_cb_class_currentTextChanged(const QString &arg1)
 {
-    // 存储当前班级筛选条件
     currentClass = arg1;
-    // 调用组合筛选函数
     applyCombinedFilter();
 }
-
 
 // 课程筛选下拉框
 void MainWindow::on_cb_course_currentTextChanged(const QString &arg1)
 {
-    // 存储当前课程筛选条件
     currentCourse = arg1;
-    // 调用组合筛选函数
     applyCombinedFilter();
 }
 
@@ -206,6 +223,7 @@ QString MainWindow::getStatResult()
     return res;
 }
 
+// 刷新班级和课程下拉框
 void MainWindow::refreshCourseAndClass()
 {
     ui->cb_class->clear();
@@ -247,7 +265,6 @@ void MainWindow::clearChartLayout()
             }
             delete item;
         }
-        // 延迟销毁布局
         lay->deleteLater();
     }
 
@@ -276,7 +293,6 @@ void MainWindow::on_btn_trend_clicked()
     QModelIndex curIndex = ui->tableView->currentIndex();
     if(curIndex.isValid())
     {
-        // 从选中行读取 学生姓名(第1列) + 课程名称(第3列)
         stuName = proxyModel->data(proxyModel->index(curIndex.row(), 1)).toString();
         courseName = proxyModel->data(proxyModel->index(curIndex.row(), 3)).toString();
     }
@@ -332,7 +348,6 @@ void MainWindow::on_btn_trend_clicked()
     layout->addWidget(chartView);
     ui->widget_chart->setLayout(layout);
 
-    // 趋势明细追加到统计文本区
     ui->te_stat->append(trendDetail);
 }
 
@@ -374,7 +389,7 @@ void MainWindow::on_btn_chart_clicked()
     }
 
     int fail=0, pass=0, good=0, excellent=0;
-    int totalCount = 0; // 统计总数据量
+    int totalCount = 0;
     while(query.next())
     {
         int sc = query.value(0).toInt();
@@ -397,17 +412,16 @@ void MainWindow::on_btn_chart_clicked()
     if(good>0)      series->append("良好(70~84分)", good);
     if(excellent>0) series->append("优秀(≥85分)", excellent);
 
-    QChart *currentChart = new QChart();
+    currentChart = new QChart();
     currentChart->addSeries(series);
     QString chartTitle = (selClass == "全部班级" ? "所有班级" : selClass) + " - ";
     chartTitle += (selCourse == "全部课程" ? "所有课程" : selCourse) + " 成绩等级占比统计";
     currentChart->setTitle(chartTitle);
     currentChart->legend()->setAlignment(Qt::AlignRight);
 
-    QChartView *chartView = new QChartView(currentChart);
+    chartView = new QChartView(currentChart);
     chartView->setRenderHint(QPainter::Antialiasing);
 
-    // 绑定图表到UI的widget_chart容器
     QVBoxLayout *layout = new QVBoxLayout(ui->widget_chart);
     layout->setContentsMargins(0,0,0,0);
     layout->addWidget(chartView);
@@ -448,7 +462,6 @@ void MainWindow::on_btn_clearChart_clicked()
 {
     clearChartLayout();
 
-    // 延迟100ms提示，等待Qt完成销毁操作
     QTimer::singleShot(100, this, [=]() {
         QMessageBox::information(this, "操作成功", "图表已清空！");
     });
@@ -457,7 +470,6 @@ void MainWindow::on_btn_clearChart_clicked()
 // 组合筛选
 void MainWindow::applyCombinedFilter()
 {
-    // 1. 构建SQL筛选条件
     QString whereSql = "1=1";
     if (currentClass != "全部班级") {
         whereSql += " AND student_class = '" + currentClass + "'";
@@ -466,9 +478,8 @@ void MainWindow::applyCombinedFilter()
         whereSql += " AND course_name = '" + currentCourse + "'";
     }
 
-    // 2. 直接修改sqlModel的查询条件（绕过proxyModel的单条件限制）
     sqlModel->setFilter(whereSql);
-    sqlModel->select(); // 重新查询数据库
+    sqlModel->select();
 
     ui->tableView->resizeColumnsToContents();
 }

@@ -1,14 +1,17 @@
-#include "mainwindow.h"
 #include <QApplication>
+#include "loginwindow.h"
+#include "mainwindow.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+    LoginWindow loginWin;
+    loginWin.show();
 
-    MainWindow w;
-    w.show();
+    MainWindow mainWin;
+
+    QObject::connect(&loginWin, &LoginWindow::loginSuccess, &mainWin, &MainWindow::show);
+
     return a.exec();
 }
